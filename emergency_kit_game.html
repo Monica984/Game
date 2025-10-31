@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emergency Kit Game</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to right, #f0f8ff, #e6f7ff);
+    text-align: center;
+    padding: 30px;
+  }
+  h1 {
+    color: #005580;
+  }
+  .disaster-select, .items, .kit, .result {
+    margin: 20px auto;
+    max-width: 500px;
+  }
+  button {
+    background: #0099cc;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    margin: 5px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #007399;
+  }
+  .item-btn.selected {
+    background: #4CAF50;
+  }
+  .wrong {
+    background: #cc0000 !important;
+  }
+  .hidden {
+    display: none;
+  }
+  #score, #timer {
+    font-size: 18px;
+    color: #004466;
+    font-weight: bold;
+    margin: 10px;
+  }
+</style>
+</head>
+<body>
+  <h1>Emergency Kit Challenge!</h1>
+  <div id="score">Score: 100</div>
+  <div id="timer">Time Left: 60s</div>
+  <div class="disaster-select">
+    <h3>Select a disaster:</h3>
+    <button onclick="chooseDisaster('earthquake')">Earthquake</button>
+    <button onclick="chooseDisaster('flood')">Flood</button>
+    <button onclick="chooseDisaster('cyclone')">Cyclone</button>
+  </div>
+
+  <div class="items hidden">
+    <h3>Pack your emergency kit:</h3>
+    <div id="itemsList"></div>
+    <button onclick="checkKit()">Done Packing!</button>
+  </div>
+
+  <div class="result hidden">
+    <h3 id="resultText"></h3>
+    <button onclick="restartGame()">Play Again</button>
+  </div>
+
+<audio id="correctSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c5d05ef64a.mp3?filename=correct-2-46134.mp3"></audio>
+<audio id="wrongSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_4e69eae826.mp3?filename=wrong-buzzer-6268.mp3"></audio>
+<audio id="timerSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_9eacfd7a1b.mp3?filename=timer-beep-37663.mp3"></audio>
+
+<script>
+const disasters = {
+  earthquake: {
+    correct: ['First Aid Kit', 'Torch', 'Bottled Water', 'Whistle', 'Power Bank', 'Blanket'],
+    allItems: [
+      'First Aid Kit', 'Torch', 'Bottled Water', 'Whistle', 'Power Bank', 'Blanket',
+      'Umbrella', 'Inflatable Boat', 'Swim Vest', 'Sunscreen', 'Camera', 'Laptop', 'Makeup Kit', 'Pillow', 'Slippers'
+    ]
+  },
+  flood: {
+    correct: ['Waterproof Bag', 'Raincoat', 'Swim Vest', 'Food Packets', 'Torch', 'Blanket'],
+    allItems: [
+      'Waterproof Bag', 'Raincoat', 'Swim Vest', 'Food Packets', 'Torch', 'Whistle', 'Helmet', 'Blanket', 'Sunglasses', 'Books', 'Toy', 'Hair Dryer', 'Soap', 'Perfume'
+    ]
+  },
+  cyclone: {
+    correct: ['Food Packets', 'Torch', 'Power Bank', 'Raincoat', 'Important Documents', 'Blanket'],
+    allItems: [
+      'Food Packets', 'Torch', 'Power Bank', 'Raincoat', 'Important Documents', 'Blanket',
+      'Boat', 'Sunscreen', 'Radio', 'Mirror', 'Tablet', 'Magazine', 'Comb', 'Shoes', 'Towel'
+    ]
+  }
+};
+
+let selectedDisaster = '';
+let chosenItems = [];
+let score = 100;
+let timer = 60;
+let timerInterval;
+
+function updateScore() {
+  document.getElementById('score').textContent = `Score: ${score}`;
+}
+
+function updateTimer() {
+  document.getElementById('timer').textContent = `Time Left: ${timer}s`;
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timer = 60;
+  updateTimer();
+  timerInterval = setInterval(() => {
+    timer--;
+    updateTimer();
+    if (timer <= 10 && timer > 0) {
+      document.getElementById('timerSound').play();
+    }
+    if (timer === 0) {
+      clearInterval(timerInterval);
+      checkKit();
+    }
+  }, 1000);
+}
+
+function chooseDisaster(type) {
+  selectedDisaster = type;
+  document.querySelector('.disaster-select').classList.add('hidden');
+  document.querySelector('.items').classList.remove('hidden');
+  score = 100;
+  updateScore();
+  startTimer();
+  displayItems();
+}
+
+function displayItems() {
+  const container = document.getElementById('itemsList');
+  container.innerHTML = '';
+
+  // shuffle items for more challenge
+  const shuffledItems = disasters[selectedDisaster].allItems.sort(() => Math.random() - 0.5);
+
+  shuffledItems.forEach(item => {
+    const btn = document.createElement('button');
+    btn.textContent = item;
+    btn.className = 'item-btn';
+    btn.onclick = () => toggleItem(item, btn);
+    container.appendChild(btn);
+  });
+}
+
+function toggleItem(item, button) {
+  const correctItems = disasters[selectedDisaster].correct;
+  const correctSound = document.getElementById('correctSound');
+  const wrongSound = document.getElementById('wrongSound');
+
+  if (chosenItems.includes(item)) {
+    chosenItems = chosenItems.filter(i => i !== item);
+    button.classList.remove('selected');
+    if (!correctItems.includes(item)) {
+      button.classList.remove('wrong');
+    }
+  } else {
+    chosenItems.push(item);
+    if (correctItems.includes(item)) {
+      button.classList.add('selected');
+      correctSound.play();
+    } else {
+      button.classList.add('wrong');
+      wrongSound.play();
+      score -= 10;
+      if (score < 0) score = 0;
+      updateScore();
+    }
+  }
+}
+
+function checkKit() {
+  clearInterval(timerInterval);
+  const correctItems = disasters[selectedDisaster].correct;
+  const correctCount = chosenItems.filter(i => correctItems.includes(i)).length;
+  const total = correctItems.length;
+
+  document.querySelector('.items').classList.add('hidden');
+  document.querySelector('.result').classList.remove('hidden');
+  
+  let message = `You packed ${correctCount}/${total} correct items. Final Score: ${score}.\n`;
+
+  if (timer > 0) {
+    score += Math.floor(timer / 2); // Bonus for finishing early
+  }
+
+  if (correctCount === total && score >= 100) {
+    message += ` Perfect! You packed everything correctly for a ${selectedDisaster}!`;
+  } else if (correctCount === total && score < 100) {
+    message += ` You got all correct items, but picked a few wrong ones!`;
+  } else if (correctCount >= total - 2) {
+    message += ` Good job! Try again to improve!`;
+  } else {
+    message += ` You need to review what’s important for a ${selectedDisaster}.`;
+  }
+
+  document.getElementById('resultText').textContent = message;
+}
+
+function restartGame() {
+  selectedDisaster = '';
+  chosenItems = [];
+  score = 100;
+  updateScore();
+  clearInterval(timerInterval);
+  document.getElementById('timer').textContent = 'Time Left: 60s';
+  document.querySelector('.result').classList.add('hidden');
+  document.querySelector('.disaster-select').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
