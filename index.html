@@ -1,0 +1,85 @@
+import pygame
+import sys
+import random
+
+pygame.init()
+
+# Screen
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Dark Corridor")
+
+# Colors
+BLACK = (0, 0, 0)
+RED = (180, 0, 0)
+WHITE = (200, 200, 200)
+
+# Clock
+clock = pygame.time.Clock()
+
+# Player
+player_size = 30
+player_x = WIDTH // 2
+player_y = HEIGHT // 2
+player_speed = 5
+
+# Ghost (enemy)
+ghost_size = 40
+ghost_x = random.randint(0, WIDTH)
+ghost_y = random.randint(0, HEIGHT)
+ghost_speed = 2
+
+# Font
+font = pygame.font.SysFont(None, 60)
+
+def game_over():
+    text = font.render("YOU WERE CAUGHT", True, RED)
+    screen.blit(text, (WIDTH//2 - 200, HEIGHT//2 - 30))
+    pygame.display.update()
+    pygame.time.delay(3000)
+    pygame.quit()
+    sys.exit()
+
+# Game loop
+while True:
+    screen.fill(BLACK)
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+    keys = pygame.key.get_pressed()
+
+    if keys[pygame.K_w]:
+        player_y -= player_speed
+    if keys[pygame.K_s]:
+        player_y += player_speed
+    if keys[pygame.K_a]:
+        player_x -= player_speed
+    if keys[pygame.K_d]:
+        player_x += player_speed
+
+    # Ghost movement (follows player)
+    if ghost_x < player_x:
+        ghost_x += ghost_speed
+    if ghost_x > player_x:
+        ghost_x -= ghost_speed
+    if ghost_y < player_y:
+        ghost_y += ghost_speed
+    if ghost_y > player_y:
+        ghost_y -= ghost_speed
+
+    # Draw player and ghost
+    pygame.draw.rect(screen, WHITE, (player_x, player_y, player_size, player_size))
+    pygame.draw.rect(screen, RED, (ghost_x, ghost_y, ghost_size, ghost_size))
+
+    # Collision
+    player_rect = pygame.Rect(player_x, player_y, player_size, player_size)
+    ghost_rect = pygame.Rect(ghost_x, ghost_y, ghost_size, ghost_size)
+
+    if player_rect.colliderect(ghost_rect):
+        game_over()
+
+    pygame.display.update()
+    clock.tick(60)
